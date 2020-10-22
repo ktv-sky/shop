@@ -1,9 +1,36 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 
 
 User = get_user_model()
+
+
+class LatestProductsManager:
+
+    @staticmethod
+    def get_products_for_main_page(*args, **kwargs):
+        with_respect_to = kwargs.get('with_redpect_to')
+        products = []
+        ct_models = ContentType.objects.filter(model__in=args)
+        for ct_model in ct_models:
+            model_product = ct_model.model_class()._base_manager.all().order_by('-id')[:5]
+            products.extend(model_product)
+        if with_respect_to:
+            ct_model = ContentType.objects.filter(model=with_respect_to)
+            if ct_model.exists():
+                if with_respect_to in args:
+                    return sorted(
+                        products,
+                        key=lambda x:__class__.__meta.model_name.startswith(
+                            with_respect_to,
+                            reverse=True))
+        return products
+
+
+class LatestProducts:
+    objects = LatestProductsManager()
 
 
 class Category(models.Model):
@@ -22,7 +49,7 @@ class Product(models.Model):
         Category, verbose_name='категория', on_delete=models.CASCADE
         )
     title = models.CharField(max_length=255, verbose_name='наименование')
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, verbose_name='артикул')
     image = models.ImageField(verbose_name='изображение')
     description = models.TextField(verbose_name='описание', null=True)
     price = models.DecimalField(
@@ -32,6 +59,10 @@ class Product(models.Model):
     def __str__(self):
         return self.title
 
+    class Meta:
+        abstract = True
+
+
 class CartProduct(models.Model):
     user = models.ForeignKey(
         'Customer', verbose_name='покупатель', on_delete=models.CASCADE
@@ -40,9 +71,11 @@ class CartProduct(models.Model):
         'Cart', verbose_name='корзина', on_delete=models.CASCADE,
         related_name='related_products'
         )
-    product = models.ForeignKey(
-        Product, verbose_name='товар', on_delete=models.CASCADE
-        )
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+
     qty = models.PositiveIntegerField(default=1)
     final_price = models.DecimalField(
         max_digits=9, decimal_places=2, verbose_name='общая цена'
@@ -79,12 +112,44 @@ class Customer(models.Model):
         return f"Покупатель: {self.user.first_name} {self.user.last_name}"
 
 
-class Specification(models.Model):
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    name = models.CharField(
-        max_length=255, verbose_name='имя товара для характеристик'
+class Notebook(Product):
+    diagonal = models.CharField(max_length=255, verbose_name='диагональ')
+    display_type = models.CharField(max_length=255, verbose_name='тип дисплея')
+    processor_freq = models.CharField(
+        max_length=255, verbose_name='частота процессора'
+        )
+    ram = models.CharField(max_length=255, verbose_name='оперативная память')
+    video = models.CharField(max_length=255, verbose_name='видеокарта')
+    time_without_charge = models.CharField(
+        max_length=255, verbose_name='время работы аккумулятора'
         )
 
     def __str__(self):
-        return f"Характеристики для товара: {self.name}"
+        return f"{self.category.name}: {self.title}"
+
+
+class Smartphone(Product):
+    diagonal = models.CharField(max_length=255, verbose_name='диагональ')
+    display_type = models.CharField(
+        max_length=255, verbose_name='тип дисплея'
+        )
+    resolution = models.CharField(
+        max_length=255, verbose_name='разрешение экрана'
+        )
+    accum_volume = models.CharField(
+        max_length=255, verbose_name='объем батареи'
+        )
+    ram = models.CharField(max_length=255, verbose_name='оперативная память')
+    sd = models.BooleanField(default=True)
+    sd_volume_max = models.CharField(
+        max_length=255, verbose_name='максимальный объем встраиваемой памяти'
+        )
+    main_cam_mp = models.CharField(
+        max_length=255, verbose_name='главная камера'
+        )
+    frontal_cam_mp = models.CharField(
+        max_length=255, verbose_name='фронтальная камера'
+        )
+
+    def __str__(self):
+        return f"{self.category.name}: {self.title}"
