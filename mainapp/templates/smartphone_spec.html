@@ -20,7 +20,21 @@
       <td>Оперативная память</td>
       <td>{{ product.ram }}</td>
     </tr>
-
+    {% if product.sd %}
+    <tr>
+      <td>Наличие слота SD карты</td>
+      <td>Да</td>
+    </tr>
+    <tr>
+      <td>Объем SD карты</td>
+      <td>{{ product.sd_volume_max }}</td>
+    </tr>
+    {% else %}
+    <tr>
+      <td>Наличие слота SD карты</td>
+      <td>Нет</td>
+    </tr>
+    {% endif %}
     <tr>
       <td>Главная камера</td>
       <td>{{ product.main_cam_mp }}</td>
