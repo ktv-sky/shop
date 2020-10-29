@@ -104,6 +104,9 @@ class Product(models.Model):
     class Meta:
         abstract = True
 
+    def get_model_name(self):
+        return self.__class__.__name__.lower()
+
 
 class CartProduct(models.Model):
     user = models.ForeignKey(
