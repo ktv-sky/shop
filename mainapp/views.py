@@ -1,10 +1,10 @@
-from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
+from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.views.generic import DetailView, View
 
-from .mixins import CategoryDetailMixin, CartMixin
+from .mixins import CartMixin, CategoryDetailMixin
 from .models import (Cart, CartProduct, Category, Customer, LatestProducts,
                      Notebook, Smartphone)
 
