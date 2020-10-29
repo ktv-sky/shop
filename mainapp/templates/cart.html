@@ -35,13 +35,13 @@
             {% csrf_token %}
             <input type="number" class="form-control" name="qty" style="width: 70px;" min="1" value="{{ item.qty }}">
             <br>
-            <input type="submit" class="btn btn-primary" value="Изменить количество">
+            <input type="submit" class="btn btn-primary btn-sm" value="Изменить кол-во">
           </form>
         </td>
         <td>{{ item.final_price }}</td>
         <td>
           <a href="{% url 'delete_from_cart' ct_model=item.content_object.get_model_name slug=item.content_object.slug %}">
-            <button class="btn btn-danger">Удалить из корзины</button>
+            <button class="btn btn-danger btn-sm">Удалить</button>
           </a>
         </td>
       </tr>
