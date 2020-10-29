@@ -153,17 +153,6 @@ class Cart(models.Model):
     def __str__(self):
         return str(self.id)
 
-    def save(self, *args, **kwargs):
-        cart_data = self.products.aggregate(
-            models.Sum('final_price'), models.Sum('qty')
-            )
-        if cart_data.get('final_price__sum'):
-            self.final_price = cart_data['final_price__sum']
-        else:
-            self.final_price = 0
-        self.total_products = cart_data['qty__sum']
-        super().save(*args, **kwargs)
-
 
 class Customer(models.Model):
     user = models.ForeignKey(
@@ -248,50 +237,62 @@ class Order(models.Model):
     BUYING_TYPE_DELIVERY = 'delivery'
 
     STATUS_CHOICES = (
-        (STATUS_NEW, 'Новый заказ'),
-        (STATUS_IN_PROGRESS, 'Заказ в обработке'),
-        (STATUS_READY, 'Заказ готов'),
-        (STATUS_COMPLETED, 'Заказ выполнен')
+        (STATUS_NEW, 'новый заказ'),
+        (STATUS_IN_PROGRESS, 'заказ в обработке'),
+        (STATUS_READY, 'заказ готов'),
+        (STATUS_COMPLETED, 'заказ выполнен')
     )
 
     BUYING_TYPE_CHOICES = (
-        (BUYING_TYPE_SELF, 'Самовывоз'),
-        (BUYING_TYPE_DELIVERY, 'Доставка'),
+        (BUYING_TYPE_SELF, 'самовывоз'),
+        (BUYING_TYPE_DELIVERY, 'доставка'),
     )
 
     customer = models.ForeignKey(
         Customer,
-        verbose_name='Покупатель',
+        verbose_name='покупатель',
         related_name='related_orders',
         on_delete=models.CASCADE
     )
-    first_name = models.CharField(max_length=255, verbose_name='Имя')
-    last_name = models.CharField(max_length=255, verbose_name='Имя')
-    phone = models.CharField(max_length=20, verbose_name='Телефон')
-    assress = models.CharField(max_length=255, verbose_name='Адрес доставки')
+    first_name = models.CharField(max_length=255, verbose_name='имя')
+    last_name = models.CharField(max_length=255, verbose_name='фамилия')
+    phone = models.CharField(max_length=20, verbose_name='телефон')
+    cart = models.ForeignKey(
+        Cart,
+        verbose_name='корзина',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+    address = models.CharField(
+        max_length=255,
+        verbose_name='адрес доставки',
+        null=True,
+        blank=True
+    )
     status = models.CharField(
         max_length=100,
-        verbose_name='Статус заказа',
+        verbose_name='статус заказа',
         choices=STATUS_CHOICES,
         default=STATUS_NEW
     )
     buying_type = models.CharField(
         max_length=100,
-        verbose_name='Тип заказа',
+        verbose_name='тип заказа',
         choices=BUYING_TYPE_CHOICES,
         default=BUYING_TYPE_SELF
     )
     comment = models.TextField(
-        verbose_name='Комментарий к заказу',
+        verbose_name='комментарий к заказу',
         null=True,
         blank=True
     )
     created_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='Дата создания заказа'
+        verbose_name='дата создания заказа'
     )
     order_date = models.DateField(
-        verbose_name='Дата получения заказа',
+        verbose_name='дата получения заказа',
         default=timezone.now
     )
 
