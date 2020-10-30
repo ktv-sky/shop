@@ -14,12 +14,6 @@ def get_product_url(obj, viewname, *model_name):
     ct_model = obj.__class__._meta.model_name
     return reverse(viewname, kwargs={'ct_model': ct_model, 'slug':obj.slug})
 
-class MinResolutionErrorException(Exception):
-    pass
-
-class MaxResolutionErrorException(Exception):
-    pass
-
 
 class LatestProductsManager:
 
@@ -143,7 +137,7 @@ class Cart(models.Model):
     products = models.ManyToManyField(
         CartProduct, blank=True, related_name='related_cart'
         )
-    total_products = models.PositiveIntegerField(default=0)
+    total_products = models.PositiveIntegerField(default=0, null=True)
     final_price = models.DecimalField(
         max_digits=9, default=0, decimal_places=2, verbose_name='общая цена'
     )
