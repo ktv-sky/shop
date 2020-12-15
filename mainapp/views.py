@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.views.generic import DetailView, View
 
-from .forms import LoginForm, OrderForm
+from .forms import LoginForm, OrderForm, RegistrationForm
 from .mixins import CartMixin
 from .models import CartProduct, Category, Customer, Product
 from .utils import recalc_cart
@@ -172,6 +172,45 @@ class LoginView(CartMixin, View):
                 login(request, user)
                 return HttpResponseRedirect('/')
         return render(request, 'login.html', {
+            'form': form,
+            'cart': self.cart
+        })
+
+
+class RegistrationView(CartMixin, View):
+
+    def get(self, request, *args, **kwargs):
+        form = RegistrationForm(request.POST or None)
+        categories = Category.objects.all()
+        return render(request, 'registration.html', {
+            'form': form,
+            'categories': categories,
+            'cart': self.cart
+        })
+
+    def post(self, request, *args, **kwargs):
+        form = RegistrationForm(request.POST or None)
+        if form.is_valid():
+            new_user = form.save(commit=False)
+            new_user.username = form.cleaned_data['username']
+            new_user.email = form.cleaned_data['email']
+            new_user.first_name = form.cleaned_data['first_name']
+            new_user.last_name = form.cleaned_data['last_name']
+            new_user.save()
+            new_user.set_password(form.cleaned_data['password'])
+            new_user.save()
+            Customer.objects.create(
+                user = new_user,
+                phone = form.cleaned_data['phone'],
+                address = form.cleaned_data['address']
+                )
+            user = authenticate(
+                username = form.cleaned_data['username'],
+                password = form.cleaned_data['password']
+                )
+            login(request, user)
+            return HttpResponseRedirect('/')
+        return render(request, 'registration.html', {
             'form': form,
             'cart': self.cart
         })
