@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -19,6 +18,17 @@ class Category(models.Model):
 
     def get_absolute_url(self):
         return reverse('category_detail', kwargs={'slug': self.slug})
+
+    def get_fields_for_filter_in_template(self):
+        return ProductFeatures.objects.filter(
+            category=self,
+            use_in_filter=True
+        ).prefetch_related('category').value(
+            'feature_key',
+            'feature_measure',
+            'feature_name',
+            'filter_type'
+        )
 
 
 class Product(models.Model):
@@ -42,6 +52,73 @@ class Product(models.Model):
 
     def get_absolute_url(self):
         return reverse('product_detail', kwargs={'slug': self.slug})
+
+
+class ProductFeatures(models.Model):
+
+    RADIO = 'radio'
+    CHECKBOX = 'checkbox'
+
+    FILTER_TYPE_CHOICES = (
+        (RADIO, 'радиокнопка'),
+        (CHECKBOX, 'Чекбокс')
+    )
+
+    feature_key = models.CharField(
+        max_length=100, verbose_name='ключ характеристики'
+        )
+    feature_name = models.CharField(
+        max_length=255, verbose_name='наименование характеристики'
+        )
+    category = models.ForeignKey(
+        Category, verbose_name='категории', on_delete=models.CASCADE
+        )
+    postfix_for_value = models.CharField(
+        max_length=20, null=True, blank=True,
+        verbose_name='постфикс для значения',
+        help_text=f'например для характеристики "Часы работы" к значению ' \
+                f'можно добавить постфикс "часов" и как результат значение ' \
+                f'"10 часов"'
+        )
+    use_in_filter = models.BooleanField(
+        default=False,
+        verbose_name='использовать в фильтрации товаров в шаблоне'
+        )
+    filter_type = models.CharField(
+        max_length=20, verbose_name='тип фильтра', default=CHECKBOX,
+        choices=FILTER_TYPE_CHOICES
+        )
+    filter_measure = models.CharField(
+        max_length=50, verbose_name='единица измерения для фильтра',
+        help_text='единица измерения для конкретного фильтра'
+        )
+
+    def __str__(self):
+        return f'Категория - "{self.category.name}" | ' \
+            f'Характеристика - "{self.feature_name}" | ' \
+            f'Значение = "{self.feature_value}"'
+
+
+class ProductFeatureValidators(models.Model):
+
+    category = models.ForeignKey(
+        Category, verbose_name='категории', on_delete=models.CASCADE
+        )
+    feature = models.ForeignKey(
+        ProductFeatures, verbose_name='характеристики', null=True, blank=True,
+        on_delete=models.CASCADE
+        )
+    feature_value = models.CharField(
+        max_length=255, unique=True, null=True, blank=True,
+        verbose_name='значение характеристики'
+        )
+
+    def __str__(self):
+        if not self.feature:
+            return f'Валидотор категории "{self.category.name}" - '\
+                f'характеристика не выбрана'
+        return f'Валидатор категории "{self.category.name}" |' \
+                f'Характеристика - "{self.feature.feature_name}"'
 
 
 class CartProduct(models.Model):
