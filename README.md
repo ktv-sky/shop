@@ -1,4 +1,4 @@
-# Online store build with Django, Django REST API and Bootstrap4. On development stage.
+# Online store build with Django, Django REST and Bootstrap4. On development stage.
 
 ## Screenshots
 ![img1](https://i.imgur.com/D9ndl3L.png)
